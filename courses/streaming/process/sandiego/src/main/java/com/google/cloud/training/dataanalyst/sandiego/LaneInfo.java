@@ -1,3 +1,4 @@
+
 package com.google.cloud.training.dataanalyst.sandiego;
 
 import org.apache.beam.sdk.coders.AvroCoder;
@@ -8,7 +9,7 @@ public class LaneInfo {
   private String[] fields;
 
   private enum Field {
-    TIMESTAMP, LATITUDE, LONGITUDE, FREEWAY_ID, FREEWAY_DIR, LANE, SPEED;
+    FREEWAY_DIR, FREEWAY_ID, LANE, LATITUDE, LONGITUDE, SENSOR_ID, SPEED, TIMESTAMP;
   }
 
   public LaneInfo() {
@@ -17,6 +18,11 @@ public class LaneInfo {
 
   public static LaneInfo newLaneInfo(String line) {
     String[] pieces = line.split(",");
+    for (int i=0; i < pieces.length; i++) {
+      String[] noKey = pieces[i].split(":", 2);
+      String noQuotes = noKey[1].replaceAll("\"", "").replaceAll("[{}]", "");
+      pieces[i] = noQuotes.trim();
+    }
     LaneInfo info = new LaneInfo();
     info.fields = pieces;
     return info;
@@ -33,22 +39,17 @@ public class LaneInfo {
 
   /**
    * Create unique key for sensor in a particular lane
-   * 
+   *
    * @return
    */
   public String getSensorKey() {
-    StringBuilder sb = new StringBuilder();
-    for (int f = Field.LATITUDE.ordinal(); f <= Field.LANE.ordinal(); ++f) {
-      sb.append(fields[f]);
-      sb.append(',');
-    }
-    return sb.substring(0, sb.length() - 1); // without trailing comma
+    return get(Field.SENSOR_ID);
   }
 
   /**
    * Create unique key for all the sensors for traffic in same direction at a
    * location
-   * 
+   *
    * @return
    */
   public String getLocationKey() {

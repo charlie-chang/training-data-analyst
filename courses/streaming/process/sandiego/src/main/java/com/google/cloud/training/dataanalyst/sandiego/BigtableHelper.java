@@ -1,3 +1,4 @@
+
 /*
  * Copyright (C) 2017 Google Inc.
  *
@@ -45,7 +46,7 @@ import com.google.protobuf.ByteString;
 
 /**
  * Helper class to stream a PCollection<LaneInfo> to Bigtable
- * 
+ *
  * @author vlakshmanan
  *
  */
@@ -58,19 +59,19 @@ public class BigtableHelper {
 
   public static void writeToBigtable(PCollection<LaneInfo> laneInfo, DataflowPipelineOptions options) {
     BigtableOptions.Builder optionsBuilder = //
-        new BigtableOptions.Builder()//
-            .setProjectId(options.getProject()) //
-            .setInstanceId(INSTANCE_ID).setUserAgent("cpb210");
-    
+            new BigtableOptions.Builder()//
+                    .setProjectId(options.getProject()) //
+                    .setInstanceId(INSTANCE_ID).setUserAgent("cpb210");
+
     // batch up requests to Bigtable every 100ms, although this can be changed
     // by specifying a lower/higher value for BIGTABLE_BULK_THROTTLE_TARGET_MS_DEFAULT
     BulkOptions bulkOptions = new BulkOptions.Builder().enableBulkMutationThrottling().build();
     optionsBuilder = optionsBuilder.setBulkOptions(bulkOptions);
-    
+
     createEmptyTable(options, optionsBuilder);
     PCollection<KV<ByteString, Iterable<Mutation>>> mutations = toMutations(laneInfo);
     mutations.apply("write:cbt", //
-        BigtableIO.write().withBigtableOptions(optionsBuilder.build()).withTableId(TABLE_ID));
+            BigtableIO.write().withBigtableOptions(optionsBuilder.build()).withTableId(TABLE_ID));
   }
 
   private static void createEmptyTable(DataflowPipelineOptions options, Builder optionsBuilder) {
@@ -79,7 +80,7 @@ public class BigtableHelper {
     tableBuilder.putColumnFamilies(CF_FAMILY, cf);
 
     try (BigtableSession session = new BigtableSession(optionsBuilder
-        .setCredentialOptions(CredentialOptions.credential(options.as(GcpOptions.class).getGcpCredential())).build())) {
+            .setCredentialOptions(CredentialOptions.credential(options.as(GcpOptions.class).getGcpCredential())).build())) {
       BigtableTableAdminClient tableAdminClient = session.getTableAdminClient();
 
       try {
@@ -89,8 +90,8 @@ public class BigtableHelper {
         tableAdminClient.getTable(getTableRequestBuilder.build());
       } catch (Exception e) {
         CreateTableRequest.Builder createTableRequestBuilder = //
-            CreateTableRequest.newBuilder().setParent(getInstanceName(options)) //
-                .setTableId(TABLE_ID).setTable(tableBuilder.build());
+                CreateTableRequest.newBuilder().setParent(getInstanceName(options)) //
+                        .setTableId(TABLE_ID).setTable(tableBuilder.build());
         tableAdminClient.createTable(createTableRequestBuilder.build());
       }
 
@@ -110,9 +111,9 @@ public class BigtableHelper {
 
         // key is HIGHWAY#DIR#LANE#REVTS
         String key = info.getHighway() //
-            + "#" + info.getDirection() //
-            + "#" + info.getLane() //
-            + "#" + (Long.MAX_VALUE - ts.getMillis()); // reverse time stamp
+                + "#" + info.getDirection() //
+                + "#" + info.getLane() //
+                + "#" + (Long.MAX_VALUE - ts.getMillis()); // reverse time stamp
 
         // all the data is in a wide column table with only one column family
         List<Mutation> mutations = new ArrayList<>();
@@ -139,14 +140,14 @@ public class BigtableHelper {
       ByteString value = ByteString.copyFromUtf8(cellValue);
       ByteString colname = ByteString.copyFromUtf8(cellName);
       Mutation m = //
-          Mutation.newBuilder()
-              .setSetCell(//
-                  Mutation.SetCell.newBuilder() //
-                      .setValue(value)//
-                      .setFamilyName(CF_FAMILY)//
-                      .setColumnQualifier(colname)//
-                      .setTimestampMicros(ts) //
-              ).build();
+              Mutation.newBuilder()
+                      .setSetCell(//
+                              Mutation.SetCell.newBuilder() //
+                                      .setValue(value)//
+                                      .setFamilyName(CF_FAMILY)//
+                                      .setColumnQualifier(colname)//
+                                      .setTimestampMicros(ts) //
+                      ).build();
       mutations.add(m);
     }
   }

@@ -36,7 +36,7 @@ import com.google.api.services.bigquery.model.TableSchema;
 
 /**
  * A dataflow pipeline that pulls from Pub/Sub and writes to BigQuery
- * 
+ *
  * @author vlakshmanan
  *
  */
@@ -57,7 +57,6 @@ public class CurrentConditions {
     Pipeline p = Pipeline.create(options);
 
     String topic = "projects/" + options.getProject() + "/topics/sandiego";
-    String currConditionsTable = options.getProject() + ":demos.current_conditions";
 
     // Build the table schema for the output table.
     List<TableFieldSchema> fields = new ArrayList<>();
@@ -72,39 +71,18 @@ public class CurrentConditions {
     TableSchema schema = new TableSchema().setFields(fields);
 
     PCollection<LaneInfo> currentConditions = p //
-        .apply("GetMessages", PubsubIO.readStrings().fromTopic(topic)) //
-        .apply("ExtractData", ParDo.of(new DoFn<String, LaneInfo>() {
-          @ProcessElement
-          public void processElement(ProcessContext c) throws Exception {
-            String line = c.element();
-            c.output(LaneInfo.newLaneInfo(line));
-          }
-        }));
+            .apply("GetMessages", PubsubIO.readStrings().fromTopic(topic)) //
+            .apply("ExtractData", ParDo.of(new DoFn<String, LaneInfo>() {
+              @ProcessElement
+              public void processElement(ProcessContext c) throws Exception {
+                String line = c.element();
+                c.output(LaneInfo.newLaneInfo(line));
+              }
+            }));
 
     if (options.getBigtable()) {
       BigtableHelper.writeToBigtable(currentConditions, options);
     }
-
-    currentConditions.apply("ToBQRow", ParDo.of(new DoFn<LaneInfo, TableRow>() {
-      @ProcessElement
-      public void processElement(ProcessContext c) throws Exception {
-        TableRow row = new TableRow();
-        LaneInfo info = c.element();
-        row.set("timestamp", info.getTimestamp());
-        row.set("latitude", info.getLatitude());
-        row.set("longitude", info.getLongitude());
-        row.set("highway", info.getHighway());
-        row.set("direction", info.getDirection());
-        row.set("lane", info.getLane());
-        row.set("speed", info.getSpeed());
-        row.set("sensorId", info.getSensorKey());
-        c.output(row);
-      }
-    })) //
-        .apply(BigQueryIO.writeTableRows().to(currConditionsTable)//
-            .withSchema(schema)//
-            .withWriteDisposition(BigQueryIO.Write.WriteDisposition.WRITE_APPEND)
-            .withCreateDisposition(BigQueryIO.Write.CreateDisposition.CREATE_IF_NEEDED));
 
     p.run();
   }
