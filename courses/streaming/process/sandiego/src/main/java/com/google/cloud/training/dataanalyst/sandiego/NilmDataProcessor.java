@@ -112,7 +112,7 @@ public class NilmDataProcessor {
 @SuppressWarnings("serial")
 class Helper {
 
-  private final static String INSTANCE_ID = "encored-test-1";
+  private final static String INSTANCE_ID = "encored-nilm-test-1";
   private final static String TABLE_ID    = "current_conditions";
   private final static String CF_FAMILY   = "timestamp";
 
@@ -185,7 +185,7 @@ class Helper {
 
         // all the data is in a wide column table with only one column family
         List<Mutation> mutations = new ArrayList<>();
-        addCell(mutations, "timestamp", delta);
+        addCell(mutations, ""+delta, eventBody);
 
         c.output(KV.of(ByteString.copyFromUtf8(key), mutations));
       }
