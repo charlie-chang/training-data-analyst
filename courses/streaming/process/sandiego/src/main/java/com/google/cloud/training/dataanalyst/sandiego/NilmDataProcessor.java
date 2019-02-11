@@ -114,7 +114,7 @@ class Helper {
 
   private final static String INSTANCE_ID = "encored-nilm-test-1";
   private final static String TABLE_ID    = "current_conditions";
-  private final static String CF_FAMILY   = "timestamp";
+  private final static String CF_FAMILY   = "t";
 
   public static void writeToBigtable(PCollection<String> laneInfo, DataflowPipelineOptions options) {
     BigtableOptions.Builder optionsBuilder = //
@@ -208,7 +208,7 @@ class Helper {
                                       .setValue(value)//
                                       .setFamilyName(CF_FAMILY)//
                                       .setColumnQualifier(colname)//
-                                      //.setTimestampMicros(ts) //
+                                      .setTimestampMicros(-1) //
                       ).build();
       mutations.add(m);
     }
