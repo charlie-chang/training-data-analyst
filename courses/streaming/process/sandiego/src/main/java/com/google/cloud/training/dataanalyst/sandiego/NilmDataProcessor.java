@@ -113,8 +113,8 @@ public class NilmDataProcessor {
 class Helper {
 
   private final static String INSTANCE_ID = "encored-nilm-test-1";
-  private final static String TABLE_ID    = "current_conditions";
-  private final static String CF_FAMILY   = "t";
+  private final static String TABLE_ID    = "test-1";//"current_conditions";
+  private final static String CF_FAMILY   = "timestamp";
 
   public static void writeToBigtable(PCollection<String> laneInfo, DataflowPipelineOptions options) {
     BigtableOptions.Builder optionsBuilder = //
@@ -124,7 +124,7 @@ class Helper {
 
     // batch up requests to Bigtable every 100ms, although this can be changed
     // by specifying a lower/higher value for BIGTABLE_BULK_THROTTLE_TARGET_MS_DEFAULT
-    BulkOptions bulkOptions = new BulkOptions.Builder().enableBulkMutationThrottling().build();
+    BulkOptions bulkOptions = new BulkOptions.Builder().enableBulkMutationThrottling().setBulkMaxRowKeyCount(3000).build();
     optionsBuilder = optionsBuilder.setBulkOptions(bulkOptions);
 
     createEmptyTable(options, optionsBuilder);
@@ -208,7 +208,7 @@ class Helper {
                                       .setValue(value)//
                                       .setFamilyName(CF_FAMILY)//
                                       .setColumnQualifier(colname)//
-                                      .setTimestampMicros(-1) //
+                                      .setTimestampMicros((System.currentTimeMillis()/1000)*1000) //
                       ).build();
       mutations.add(m);
     }
